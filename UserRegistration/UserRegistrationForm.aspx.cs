@@ -4,6 +4,7 @@ using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Web;
 using System.Web.UI;
 using System.Web.UI.WebControls;
@@ -15,6 +16,10 @@ namespace UserRegistration
         SqlConnection objSqlConnection = new SqlConnection(ConfigurationManager.ConnectionStrings["myconnection"].ConnectionString);
         protected void Page_Load(object sender, EventArgs e)
         {
+            if(ViewState == null)
+            {
+                ViewState["Clicks"] = 0;
+            }
             if (objSqlConnection.State == ConnectionState.Closed)
             {
                 objSqlConnection.Open();
@@ -115,44 +120,109 @@ namespace UserRegistration
             StreamCheckBox.DataBind(); // Bind the checkboxList with String List.  
 
         }
-
         protected void Button_Click(object sender, EventArgs e)
         {
-            try
+           
+            ViewState["Clicks"] = Convert.ToInt32(ViewState["Clicks"]) + 1;
+            Response.Write("server called " + ViewState["Clicks"] + " times");
+            if (validateForm())
             {
-                SqlCommand command;
-                SqlDataAdapter adapter = new SqlDataAdapter();
-                String sql = "";
-                String str = "";
-                for (int i = 0; i <= StreamCheckBox.Items.Count - 1; i++)
+                if (Page.IsValid)
+            {
+                try
                 {
-                    if (StreamCheckBox.Items[i].Selected)
+                    SqlCommand command;
+                    SqlDataAdapter adapter = new SqlDataAdapter();
+                    String sql = "";
+                    String str = "";
+                    for (int i = 0; i <= StreamCheckBox.Items.Count - 1; i++)
                     {
-                        if (str == "")
+                        if (StreamCheckBox.Items[i].Selected)
                         {
-                            str = StreamCheckBox.Items[i].Text;
+                            if (str == "")
+                            {
+                                str = StreamCheckBox.Items[i].Text;
+                            }
+                            else
+                            {
+                                str += " " + StreamCheckBox.Items[i].Text;
+                            }
+                        }
+                    }
+                        //sql = "Insert into Users(FirstName,LastName,EmaiID,Location,Stream,DOB,Gender) values('" + FirstNameTextBox.Text + "','" + LastNameTextBox.Text + "','" + EmailTextBox.Text + "','" + ddlCity.SelectedItem + " " + ddlState.SelectedItem + " " + ddlCountry.SelectedItem + "','" + str + "','" + Calendar.SelectedDate.ToShortDateString() + "','" +GenderRB.SelectedItem + "')";
+
+                        command = new SqlCommand("InsertData", objSqlConnection);
+                        command.CommandType = System.Data.CommandType.StoredProcedure;
+                        command.Parameters.AddWithValue("FirstName", FirstNameTextBox.Text);
+                        command.Parameters.AddWithValue("LastName", LastNameTextBox.Text);
+                        command.Parameters.AddWithValue("EmaiID", EmailTextBox.Text);
+                        command.Parameters.AddWithValue("Location", Convert.ToString(ddlCity.SelectedItem + " " + ddlState.SelectedItem + " " + ddlCountry.SelectedItem));
+                        command.Parameters.AddWithValue("Stream", str);
+                        command.Parameters.AddWithValue("DOB", Calendar.SelectedDate.ToShortDateString());
+                        command.Parameters.AddWithValue("Gender", GenderRB.SelectedItem.ToString());
+                        
+                       // adapter.InsertCommand = new SqlCommand(sql, objSqlConnection);
+                        int result = command.ExecuteNonQuery();
+                        if (result == 0)
+                        {
+                            Response.Write("User Registration failed.");
                         }
                         else
                         {
-                            str += " " + StreamCheckBox.Items[i].Text;
+                            Response.Write("Registered Successfully.");
                         }
-                    }
+                    command.Dispose();
                 }
-                sql = "Insert into Users(FirstName,LastName,EmaiID,Location,Stream,DOB) values('" + FirstNameTextBox.Text + "','" + LastNameTextBox.Text + "','"+ EmailTextBox.Text + "','"+ ddlCity.SelectedItem+" "+ddlState.SelectedItem+" "+ddlCountry.SelectedItem+ "','"+ str + "','"+ Calendar.SelectedDate.ToShortDateString()+"')";
-                command = new SqlCommand(sql, objSqlConnection);
-                adapter.InsertCommand = new SqlCommand(sql, objSqlConnection);
-                adapter.InsertCommand.ExecuteNonQuery();
-                command.Dispose();
+                catch (Exception ex)
+                {
+                    Response.Write("Exception in insering Data: " + ex.Message.ToString());
+                }
+                finally
+                {
+                    objSqlConnection.Close();
+                }
             }
-            catch (Exception ex)
-            {
-                Response.Write("Exception in insering Data: " + ex.Message.ToString());
-            }
-            finally
-            {
-                objSqlConnection.Close();
             }
 
         }
+        private bool validateForm()
+        {
+            bool ret = true;
+            if (string.IsNullOrEmpty(FirstNameTextBox.Text))
+            {
+                ret = false;
+                LabelTextBox.Text = "First Name is Required.";
+            }
+            else
+            {
+                LabelTextBox.Text = "";
+            }
+            if (string.IsNullOrEmpty(LastNameTextBox.Text))
+            {
+                ret = false;
+                LabelLastName.Text = "Last Name is Required.";
+            }
+            else
+            {
+                LabelLastName.Text = "";
+            }
+            if (string.IsNullOrEmpty(EmailTextBox.Text))
+            {
+                ret = false;
+                LabelEmail.Text = "Email is Required.";
+            }
+            else if(!Regex.IsMatch(EmailTextBox.Text, @"\A(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)\Z", RegexOptions.IgnoreCase))
+            {
+                ret = false;
+                LabelEmail.Text = "Email is InValid.";
+
+            }
+            else
+            {
+                LabelEmail.Text = "";
+            }
+            return ret;
+        }
+       
     }
 }
