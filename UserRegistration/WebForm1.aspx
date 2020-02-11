@@ -19,6 +19,9 @@
                     <%=TextBoxUserName.UniqueID %>:{
                 required: true
             },   
+                <%=TextBoxPassword.UniqueID %>: {
+                    required: true
+                },  
                 },
             messages: {
                     //This section we need to place our custom
@@ -26,6 +29,9 @@
                       <%=TextBoxUserName.UniqueID %>:{
             required: "Name is required."
         },  
+            <%=TextBoxPassword.UniqueID %>: {
+                required: "Password is required."
+            },
                 },
             });
         });
