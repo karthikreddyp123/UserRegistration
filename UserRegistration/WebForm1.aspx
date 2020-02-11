@@ -36,6 +36,27 @@
             });
         });
     </script>
+    <script type ="text/javascript" >                
+        $(document).ready(function () {
+            //custom rule to check regular expression   
+            $.validator.addMethod("match", function (value, element) {
+                return this.optional(element) || /^[a-zA-Z0-9._-]+@[a-zA-Z0-9-]+\.[a-zA-Z.]{2,5}$/i.test(value);
+            }, "Please enter a valid email address.");
+            $("#form1").validate({
+                rules: {
+
+                     <%=EmailTextBox.UniqueID %>: {
+                match: true
+            },  
+                },
+            messages: {
+            //This section we need to place our custom validation message for each control.  
+
+        },  
+                 
+            });  
+        });
+    </script>  
     <script>
         <style type="text/css" >
             label.error {
@@ -47,6 +68,9 @@
     <form id="form1" runat="server">
         <asp:Label ID="Label2" runat="server" Text="UserName"></asp:Label>
         <asp:TextBox ID="TextBoxUserName" runat="server"></asp:TextBox>
+        <br />
+         <asp:Label ID="Label3" runat="server" Text="Email:" CausesValidation="True"></asp:Label>
+        <asp:TextBox ID="EmailTextBox" runat="server"></asp:TextBox>
         <br />
         <asp:Label ID="Label1" runat="server" Text="Password"></asp:Label>
         
